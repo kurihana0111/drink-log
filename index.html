@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年度手搖小本本</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fff5f7;
+            color: #5a4a4a;
+        }
+
+        .pastel-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(255, 182, 193, 0.15);
+            border: 1px solid #ffe4e8;
+        }
+
+        .btn-pink {
+            background: linear-gradient(135deg, #ffafbd 0%, #ffc3a0 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pink:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 175, 189, 0.4);
+        }
+
+        .star-rating {
+            display: inline-flex;
+            gap: 4px;
+        }
+        .star-box {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: #e2e8f0;
+            transition: color 0.2s;
+        }
+        .star-box.active {
+            color: #fbbf24;
+        }
+        .star-box.half::after {
+            content: '\f089';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #fbbf24;
+            width: 50%;
+            overflow: hidden;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background-color: #ffeef0;
+        }
+
+        .has-drink {
+            background-color: #ffdae0;
+            font-weight: bold;
+        }
+
+        .drink-dot {
+            width: 5px;
+            height: 5px;
+            background-color: #ff8fa3;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 6px;
+        }
+
+        .selected-day {
+            background-color: #ff8fa3 !important;
+            color: white !important;
+        }
+        
+        .selected-day .drink-dot {
+            background-color: white;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #fff5f7; }
+        ::-webkit-scrollbar-thumb { background: #ffdae0; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-[#ff8fa3] flex items-center justify-center gap-3">
+                <i class="fas fa-ice-cream"></i> 年度手搖小本本
+            </h1>
+            <p class="text-gray-400 mt-2 tracking-widest text-sm uppercase">Sweet Drink Logbook with Gemini AI ✨</p>
+        </header>
+
+        <div class="flex flex-col gap-8">
+            <!-- 新增紀錄區 -->
+            <section class="pastel-card p-6 md:p-8">
+                <h2 class="text-xl font-bold mb-6 text-[#ff8fa3] flex items-center gap-2">
+                    <i class="fas fa-edit"></i> 記一筆新飲料
+                </h2>
+                <form id="drinkForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">店名</label>
+                        <select id="shopName" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none bg-white" required>
+                            <option value="">選擇飲料店</option>
+                            <option>50嵐</option><option>可不可熟成紅茶</option><option>迷客夏</option>
+                            <option>麻古茶坊</option><option>清心福全</option><option>龜記茗品</option>
+                            <option>得正</option><option>萬波島嶼紅茶</option><option>五桐號</option>
+                            <option>再睡5分鐘</option><option>一芳水果茶</option><option>大苑子</option>
+                            <option>珍煮丹</option><option>茶湯會</option><option>天仁茗茶</option>
+                            <option>其他自訂</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">飲料名稱</label>
+                        <input type="text" id="drinkName" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none" placeholder="想喝什麼呢？" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">甜度</label>
+                            <select id="sugar" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none bg-white">
+                                <option>無糖</option><option>一分糖</option><option>二分糖</option><option>微糖</option><option>半糖</option><option>少糖</option><option>全糖</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">冰度</label>
+                            <select id="ice" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none bg-white">
+                                <option>去冰</option><option>微冰</option><option>少冰</option><option>正常冰</option><option>熱</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">價格 (TWD)</label>
+                        <input type="number" id="price" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none" value="65">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">評分與心情</label>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div id="starRatingContainer" class="star-rating"></div>
+                            <span id="ratingValue" class="text-sm font-bold text-yellow-500">0.0 分</span>
+                            <button type="button" onclick="generateReview()" class="ml-auto text-xs bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full border border-yellow-200 hover:bg-yellow-100 transition">
+                                ✨ AI 生成心得
+                            </button>
+                        </div>
+                        <textarea id="drinkNote" class="w-full mt-3 border-pink-100 border-2 rounded-2xl p-3 text-sm outline-none resize-none h-20" placeholder="今天的心情是..."></textarea>
+                    </div>
+                    <div class="md:col-span-2 lg:col-span-3">
+                        <button type="submit" class="w-full btn-pink py-4 rounded-2xl font-bold shadow-md text-lg">
+                            <i class="fas fa-heart mr-2"></i> 記錄這份小確幸
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 統計與列表 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <section class="pastel-card p-6">
+                        <h2 class="font-bold mb-4 text-[#ff8fa3] flex items-center gap-2">
+                            <i class="fas fa-chart-line"></i> 數據統計
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="bg-white p-3 rounded-2xl border border-pink-50">
+                                <p class="text-xs text-gray-400">本月飲用</p>
+                                <p class="text-2xl font-bold text-pink-400"><span id="monthlyCount">0</span> <small class="text-xs">杯</small></p>
+                            </div>
+                            <div class="bg-white p-3 rounded-2xl border border-pink-50">
+                                <p class="text-xs text-gray-400">最常光顧</p>
+                                <p class="text-lg font-bold text-pink-400" id="favShop">-</p>
+                            </div>
+                            <button onclick="analyzeHabits()" class="w-full py-3 text-sm bg-purple-50 text-purple-500 rounded-2xl font-bold border border-purple-100 hover:bg-purple-100 transition">
+                                ✨ AI 飲用分析建議
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <section class="pastel-card p-6 h-full">
+                        <h2 id="historyTitle" class="font-bold mb-4 text-[#ff8fa3]">今日紀錄</h2>
+                        <div id="drinkList" class="space-y-4"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- 日曆區 -->
+            <section class="pastel-card p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-[#ff8fa3] flex items-center gap-2">
+                        <i class="fas fa-calendar-alt"></i> 飲品日曆
+                    </h2>
+                    <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-full border border-pink-100">
+                        <button onclick="changeMonth(-1)" class="text-[#ff8fa3]"><i class="fas fa-chevron-left"></i></button>
+                        <span id="currentMonthStr" class="font-bold min-w-[100px] text-center text-gray-600"></span>
+                        <button onclick="changeMonth(1)" class="text-[#ff8fa3]"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-7 text-center text-xs font-bold text-gray-300 mb-4">
+                    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 md:gap-4 text-sm"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="aiModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-[32px] p-8 max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <h3 class="text-2xl font-bold text-purple-500 mb-4 flex items-center gap-2">
+                <i class="fas fa-sparkles"></i> <span>AI 智慧分析</span>
+            </h3>
+            <div id="aiModalContent" class="text-gray-600 leading-relaxed overflow-y-auto pr-2 space-y-4"></div>
+            <button onclick="closeAiModal()" class="mt-6 bg-purple-50 text-purple-500 py-3 rounded-2xl font-bold">感謝建議</button>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl">
+            <h3 id="modalDate" class="text-2xl font-bold text-[#ff8fa3] mb-4">日期詳情</h3>
+            <div id="modalQuote" class="text-xs italic text-gray-400 mb-4 border-l-2 border-pink-200 pl-2"></div>
+            <div id="modalContent" class="space-y-4 max-h-[300px] overflow-y-auto"></div>
+            <button onclick="closeModal()" class="w-full mt-8 bg-pink-50 text-pink-400 py-3 rounded-2xl font-bold">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // API Key 保持為空
+        let drinks = JSON.parse(localStorage.getItem('my_drinks_v3')) || [];
+        let viewDate = new Date();
+        let selectedDayStr = new Date().toISOString().split('T')[0];
+        let currentRating = 0;
+
+        window.onload = () => {
+            initStars();
+            renderAll();
+        };
+
+        async function callGemini(prompt, systemPrompt = "你是一位親切的手搖飲專家。") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+            try {
+                const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，AI 忙碌中...";
+            } catch (e) { return "無法連線 AI。"; }
+        }
+
+        async function generateReview() {
+            const drinkName = document.getElementById('drinkName').value;
+            const shopName = document.getElementById('shopName').value;
+            if (!drinkName) return;
+            const noteArea = document.getElementById('drinkNote');
+            noteArea.value = "✨ AI 正在構思...";
+            const prompt = `我剛剛在 ${shopName} 喝了 ${drinkName}，評分 ${currentRating}。寫一段 30 字內的可愛評論。`;
+            noteArea.value = await callGemini(prompt);
+        }
+
+        async function analyzeHabits() {
+            document.getElementById('aiModal').style.display = 'flex';
+            const content = document.getElementById('aiModalContent');
+            content.innerHTML = '<div class="loading-shimmer h-40 rounded-2xl flex items-center justify-center">✨ 正在分析...</div>';
+            const monthlyData = drinks.slice(-15).map(d => `${d.date}: ${d.name}`).join('\n');
+            const prompt = `分析我的飲品偏好：\n${monthlyData}\n給出建議並推薦一種新口味。`;
+            const result = await callGemini(prompt, "你是專業的飲品分析師。");
+            content.innerHTML = `<div class="p-4 bg-purple-50 rounded-2xl text-sm whitespace-pre-wrap">${result}</div>`;
+        }
+
+        function initStars() {
+            const container = document.getElementById('starRatingContainer');
+            container.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const box = document.createElement('div');
+                box.className = 'star-box';
+                box.innerHTML = '<i class="fas fa-star"></i>';
+                box.onmousemove = (e) => {
+                    const rect = box.getBoundingClientRect();
+                    updateStarUI(i - ((e.clientX - rect.left) < (rect.width / 2) ? 0.5 : 0));
+                };
+                box.onmouseleave = () => updateStarUI(currentRating);
+                box.onclick = (e) => {
+                    const rect = box.getBoundingClientRect();
+                    currentRating = i - ((e.clientX - rect.left) < (rect.width / 2) ? 0.5 : 0);
+                    updateStarUI(currentRating);
+                };
+                container.appendChild(box);
+            }
+        }
+
+        function updateStarUI(val) {
+            const stars = document.getElementById('starRatingContainer').children;
+            document.getElementById('ratingValue').innerText = `${val.toFixed(1)} 分`;
+            for (let i = 0; i < 5; i++) {
+                stars[i].classList.remove('active', 'half');
+                if (val >= i + 1) stars[i].classList.add('active');
+                else if (val >= i + 0.5) stars[i].classList.add('half');
+            }
+        }
+
+        document.getElementById('drinkForm').onsubmit = (e) => {
+            e.preventDefault();
+            drinks.push({
+                id: Date.now(),
+                date: selectedDayStr,
+                shop: document.getElementById('shopName').value,
+                name: document.getElementById('drinkName').value,
+                sugar: document.getElementById('sugar').value,
+                ice: document.getElementById('ice').value,
+                price: parseFloat(document.getElementById('price').value) || 0,
+                rating: currentRating,
+                note: document.getElementById('drinkNote').value
+            });
+            localStorage.setItem('my_drinks_v3', JSON.stringify(drinks));
+            currentRating = 0; updateStarUI(0); e.target.reset(); renderAll();
+        };
+
+        function renderAll() { renderCalendar(); renderList(selectedDayStr); renderStats(); }
+
+        function renderStats() {
+            const ym = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+            const monthly = drinks.filter(d => d.date.startsWith(ym));
+            document.getElementById('monthlyCount').innerText = monthly.length;
+            if (drinks.length > 0) {
+                const shops = drinks.reduce((acc, c) => { acc[c.shop] = (acc[c.shop] || 0) + 1; return acc; }, {});
+                document.getElementById('favShop').innerText = Object.keys(shops).reduce((a, b) => shops[a] > shops[b] ? a : b);
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const y = viewDate.getFullYear(), m = viewDate.getMonth();
+            document.getElementById('currentMonthStr').innerText = `${y}年 ${m + 1}月`;
+            const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+            for (let i = 0; i < first; i++) grid.innerHTML += `<div></div>`;
+            for (let d = 1; d <= days; d++) {
+                const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const has = drinks.some(dr => dr.date === dStr);
+                const el = document.createElement('div');
+                el.className = `calendar-day ${has ? 'has-drink' : 'bg-white text-gray-300'} ${dStr === selectedDayStr ? 'selected-day' : ''}`;
+                el.innerHTML = `<span>${d}</span>${has ? '<div class="drink-dot"></div>' : ''}`;
+                el.onclick = () => { selectedDayStr = dStr; renderAll(); if (has) openModal(dStr); };
+                grid.appendChild(el);
+            }
+        }
+
+        function renderList(dateStr) {
+            const filtered = drinks.filter(d => d.date === dateStr);
+            const list = document.getElementById('drinkList');
+            if (filtered.length === 0) { list.innerHTML = `<div class="text-center py-10 text-gray-300">今日無紀錄 🕊️</div>`; return; }
+            list.innerHTML = filtered.map(d => `
+                <div class="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm flex justify-between items-start">
+                    <div>
+                        <div class="mb-1"><span class="text-[10px] font-bold px-2 py-0.5 bg-pink-400 text-white rounded-full">${d.shop}</span> <span class="text-sm font-bold text-gray-700">${d.name}</span></div>
+                        <div class="text-xs text-gray-400">${d.sugar} • ${d.ice} • $${d.price}</div>
+                        ${d.note ? `<div class="mt-2 text-xs text-gray-500 italic bg-pink-50 p-2 rounded-lg">${d.note}</div>` : ''}
+                    </div>
+                    <button onclick="deleteDrink(${d.id})" class="text-gray-200 hover:text-red-400"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function deleteDrink(id) {
+            drinks = drinks.filter(d => d.id !== id);
+            localStorage.setItem('my_drinks_v3', JSON.stringify(drinks));
+            renderAll();
+        }
+
+        function changeMonth(n) { viewDate.setMonth(viewDate.getMonth() + n); renderCalendar(); }
+
+        async function openModal(dateStr) {
+            const filtered = drinks.filter(d => d.date === dateStr);
+            document.getElementById('modalDate').innerText = dateStr;
+            document.getElementById('modalContent').innerHTML = filtered.map(d => `<div class="bg-pink-50/50 p-3 rounded-xl"><b>${d.shop}</b>｜${d.name}<br><small>★ ${d.rating}</small></div>`).join('');
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modalQuote').innerText = await callGemini(`當天喝了 ${filtered.map(d=>d.name).join('與')}。寫一句 15 字內的金句。`);
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function closeAiModal() { document.getElementById('aiModal').style.display = 'none'; }
+    </script>
+</body>
+</html>
