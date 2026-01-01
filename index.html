@@ -33,25 +33,70 @@
             box-shadow: 0 5px 15px rgba(255, 175, 189, 0.4);
         }
 
+        /* ---------------- 星星評分核心樣式 ---------------- */
+        .star-container {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
         .star-box {
             position: relative;
             cursor: pointer;
-            font-size: 1.8rem;
-            color: #e2e8f0;
-            transition: color 0.2s;
-        }
-        .star-box.active { color: #fbbf24; }
-        .star-box.half::after {
-            content: '\f089';
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            position: absolute;
-            left: 0; top: 0;
-            color: #fbbf24;
-            width: 50%;
-            overflow: hidden;
+            font-size: 2rem;
+            color: #e2e8f0; 
+            display: inline-block;
+            line-height: 1;
         }
 
+        .star-box .star-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: #fbbf24;
+            overflow: hidden;
+            width: 0%; 
+            white-space: nowrap;
+            transition: width 0.1s ease;
+        }
+
+        .star-box.active .star-fill { width: 100%; }
+        .star-box.half .star-fill { width: 50%; }
+
+        /* ---------------- 排行榜樣式 ---------------- */
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #fff;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            border: 1px solid #fff0f2;
+            transition: all 0.2s;
+        }
+        
+        .rank-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 24px;
+            border: 1px solid #efe5dd;
+        }
+
+        /* ---------------- 其他 UI 樣式 ---------------- */
         .calendar-day {
             aspect-ratio: 1 / 1;
             display: flex;
@@ -82,34 +127,6 @@
             background-color: #ff8fa3 !important;
             color: white !important;
         }
-        
-        .selected-day .drink-dot {
-            background-color: white;
-        }
-
-        /* 統計排行榜樣式 */
-        .rank-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: white;
-            border-radius: 16px;
-            margin-bottom: 8px;
-            border: 1px solid #fff0f2;
-        }
-
-        .rank-number {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            font-size: 0.8rem;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -132,7 +149,7 @@
                             <option value="">選擇店名</option>
                             <option>50嵐</option><option>可不可</option><option>迷客夏</option>
                             <option>麻古</option><option>清心</option><option>龜記</option>
-                            <option>得正</option><option>五桐號</option><option>其他</option>
+                            <option>得正</option><option>五桐號</option><option>再睡5分鐘</option><option>其他</option>
                         </select>
                     </div>
                     <div>
@@ -153,10 +170,17 @@
                             </select>
                         </div>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-2">價格 (NTD)</label>
+                        <input type="number" id="drinkPrice" class="w-full border-pink-100 border-2 rounded-2xl p-3 outline-none" placeholder="預設 60" value="60">
+                    </div>
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-400 mb-2">評分與心得</label>
-                        <div id="starRatingContainer" class="flex gap-2 mb-3"></div>
-                        <textarea id="drinkNote" class="w-full border-pink-100 border-2 rounded-2xl p-3 text-sm outline-none resize-none h-20" placeholder="這杯好喝嗎？"></textarea>
+                        <label class="block text-xs font-bold text-gray-400 mb-2">評分與心得 (點左側選半顆星)</label>
+                        <div class="flex items-center gap-4 mb-3">
+                            <div id="starRatingContainer" class="star-container"></div>
+                            <span id="ratingDisplay" class="text-2xl font-black text-yellow-500 min-w-[50px]">0.0</span>
+                        </div>
+                        <textarea id="drinkNote" class="w-full border-pink-100 border-2 rounded-2xl p-3 text-sm outline-none resize-none h-20" placeholder="寫點什麼吧..."></textarea>
                     </div>
                     <div class="md:col-span-1 flex flex-col justify-end">
                         <button type="submit" class="w-full btn-pink py-4 rounded-2xl font-bold shadow-md">
@@ -174,15 +198,13 @@
                             <h2 class="font-bold mb-4 text-[#ff8fa3] flex items-center gap-2">
                                 <i class="fas fa-chart-pie"></i> 數據統計
                             </h2>
-                            <div class="space-y-4 mb-6">
-                                <div class="bg-white p-3 rounded-2xl border border-pink-50">
-                                    <p class="text-[10px] text-gray-400">本月飲用</p>
-                                    <p class="text-2xl font-bold text-pink-400" id="monthlyCount">0</p>
-                                </div>
+                            <div class="bg-white p-4 rounded-2xl border border-pink-50 mb-4">
+                                <p class="text-[10px] text-gray-400 uppercase tracking-tighter">本月飲用量</p>
+                                <p class="text-3xl font-bold text-pink-400" id="monthlyCount">0 杯</p>
                             </div>
                         </div>
-                        <button onclick="showRankings()" class="w-full py-3 bg-purple-50 text-purple-500 rounded-2xl font-bold border border-purple-100 hover:bg-purple-100 transition flex items-center justify-center gap-2">
-                            <i class="fas fa-trophy"></i> 查看年度戰績排行
+                        <button onclick="showRankings()" class="w-full py-4 bg-purple-50 text-purple-500 rounded-2xl font-bold border border-purple-100 hover:bg-purple-100 transition flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fas fa-crown"></i> 查看年度戰績排行
                         </button>
                     </section>
                 </div>
@@ -203,38 +225,49 @@
                         <button onclick="changeMonth(1)" class="text-pink-300 px-2"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
-                <div class="grid grid-cols-7 text-center text-[10px] font-bold text-gray-300 mb-4">
-                    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
-                </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-sm"></div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-sm text-center"></div>
             </section>
         </div>
     </div>
 
     <!-- 排行榜 Modal -->
     <div id="rankModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-[32px] p-8 max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh]">
-            <h3 class="text-2xl font-bold text-purple-500 mb-6 flex items-center gap-2">
-                <i class="fas fa-crown"></i> 飲品英雄榜
-            </h3>
+        <div class="bg-white rounded-[32px] p-8 max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-purple-500 flex items-center gap-2">
+                    <i class="fas fa-trophy"></i> 飲品英雄榜
+                </h3>
+                <button onclick="closeRankModal()" class="text-gray-300 hover:text-gray-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
             
-            <div class="overflow-y-auto space-y-6 pr-2">
-                <div>
-                    <h4 class="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
-                        <i class="fas fa-store"></i> 最愛店家
-                    </h4>
-                    <div id="shopRankList"></div>
+            <div class="overflow-y-auto space-y-8 pr-2 custom-scrollbar">
+                <!-- 新增：總花費卡片 -->
+                <div class="summary-card">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">年度累積小確幸投資</p>
+                    <p class="text-4xl font-black text-orange-400" id="totalSpentDisplay">NT$ 0</p>
+                    <p class="text-[10px] text-orange-300 mt-2" id="avgSpentPerDrink">平均每杯 $0</p>
                 </div>
-                
+
+                <!-- 店家排行 -->
                 <div>
-                    <h4 class="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
-                        <i class="fas fa-glass-whiskey"></i> 前五名最愛飲料
+                    <h4 class="text-xs font-bold text-gray-400 mb-4 flex items-center gap-2">
+                        <i class="fas fa-store text-pink-300"></i> 最愛店家 TOP 3
                     </h4>
-                    <div id="drinkRankList"></div>
+                    <div id="shopRankList" class="space-y-2"></div>
+                </div>
+
+                <!-- 飲料排行 -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-400 mb-4 flex items-center gap-2">
+                        <i class="fas fa-thumbs-up text-pink-300"></i> 心頭好飲料 TOP 5
+                    </h4>
+                    <div id="drinkRankList" class="space-y-2"></div>
                 </div>
             </div>
 
-            <button onclick="closeRankModal()" class="mt-8 w-full bg-purple-50 text-purple-500 py-3 rounded-2xl font-bold">繼續努力喝！</button>
+            <button onclick="closeRankModal()" class="mt-8 w-full bg-purple-50 text-purple-600 py-4 rounded-2xl font-bold hover:bg-purple-100 transition">
+                收到，繼續努力喝！
+            </button>
         </div>
     </div>
 
@@ -255,17 +288,96 @@
             for (let i = 1; i <= 5; i++) {
                 const box = document.createElement('div');
                 box.className = 'star-box';
-                box.innerHTML = '<i class="fas fa-star"></i>';
-                box.onclick = () => { currentRating = i; updateStars(); };
+                box.innerHTML = `<i class="far fa-star"></i><div class="star-fill"><i class="fas fa-star"></i></div>`;
+                box.onmousemove = (e) => {
+                    const rect = box.getBoundingClientRect();
+                    const isHalf = (e.clientX - rect.left) < (rect.width / 2);
+                    updateStarsUI(isHalf ? i - 0.5 : i);
+                };
+                box.onmouseleave = () => updateStarsUI(currentRating);
+                box.onclick = (e) => {
+                    const rect = box.getBoundingClientRect();
+                    const isHalf = (e.clientX - rect.left) < (rect.width / 2);
+                    currentRating = isHalf ? i - 0.5 : i;
+                    updateStarsUI(currentRating);
+                };
                 container.appendChild(box);
             }
         }
 
-        function updateStars() {
+        function updateStarsUI(val) {
             const stars = document.getElementById('starRatingContainer').children;
+            document.getElementById('ratingDisplay').innerText = val.toFixed(1);
             for (let i = 0; i < 5; i++) {
-                stars[i].classList.toggle('active', i < currentRating);
+                const starIdx = i + 1;
+                stars[i].classList.remove('active', 'half');
+                if (val >= starIdx) stars[i].classList.add('active');
+                else if (val >= starIdx - 0.5) stars[i].classList.add('half');
             }
+        }
+
+        // --- 排行榜邏輯更新 ---
+        function showRankings() {
+            if (drinks.length === 0) {
+                alert("還沒有數據可以統計喔！");
+                return;
+            }
+
+            // 1. 總花費統計
+            const totalSpent = drinks.reduce((sum, d) => sum + (Number(d.price) || 0), 0);
+            document.getElementById('totalSpentDisplay').innerText = `NT$ ${totalSpent.toLocaleString()}`;
+            document.getElementById('avgSpentPerDrink').innerText = `平均每杯 $${Math.round(totalSpent / drinks.length)}`;
+
+            // 2. 統計店家次數
+            const shopCounts = drinks.reduce((acc, d) => {
+                acc[d.shop] = (acc[d.shop] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedShops = Object.entries(shopCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            
+            document.getElementById('shopRankList').innerHTML = sortedShops.map(([name, count], idx) => `
+                <div class="rank-item">
+                    <div class="rank-number ${idx === 0 ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-500'}">${idx + 1}</div>
+                    <div class="flex-grow font-bold text-gray-700">${name}</div>
+                    <div class="text-xs font-bold text-pink-400">${count} 杯</div>
+                </div>
+            `).join('');
+
+            // 3. 統計飲料評分與次數
+            const drinkData = drinks.reduce((acc, d) => {
+                const key = `${d.shop} - ${d.name}`;
+                if (!acc[key]) acc[key] = { count: 0, totalScore: 0 };
+                acc[key].count++;
+                acc[key].totalScore += d.rating;
+                return acc;
+            }, {});
+
+            const sortedDrinks = Object.entries(drinkData)
+                .map(([name, data]) => ({
+                    name,
+                    avgRating: data.totalScore / data.count,
+                    count: data.count,
+                    loveIndex: (data.count * 10) + (data.totalScore / data.count * 2)
+                }))
+                .sort((a, b) => b.loveIndex - a.loveIndex)
+                .slice(0, 5);
+
+            document.getElementById('drinkRankList').innerHTML = sortedDrinks.map((d, idx) => `
+                <div class="rank-item">
+                    <div class="rank-number ${idx < 3 ? 'bg-pink-400 text-white' : 'bg-pink-100 text-pink-400'}">${idx + 1}</div>
+                    <div class="flex-grow">
+                        <div class="text-sm font-bold text-gray-700">${d.name}</div>
+                        <div class="text-[10px] text-gray-400">平均 ★${d.avgRating.toFixed(1)} / 共飲 ${d.count} 次</div>
+                    </div>
+                    <div class="text-[10px] font-bold text-purple-400 bg-purple-50 px-2 py-1 rounded-full">熱愛度 ${Math.round(d.loveIndex)}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('rankModal').style.display = 'flex';
+        }
+
+        function closeRankModal() {
+            document.getElementById('rankModal').style.display = 'none';
         }
 
         document.getElementById('drinkForm').onsubmit = (e) => {
@@ -277,12 +389,13 @@
                 name: document.getElementById('drinkName').value,
                 sugar: document.getElementById('sugar').value,
                 ice: document.getElementById('ice').value,
+                price: document.getElementById('drinkPrice').value || 60,
                 rating: currentRating,
                 note: document.getElementById('drinkNote').value
             });
             localStorage.setItem('my_drinks_v3', JSON.stringify(drinks));
             currentRating = 0;
-            updateStars();
+            updateStarsUI(0);
             e.target.reset();
             renderAll();
         };
@@ -297,52 +410,6 @@
             const ym = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
             const monthly = drinks.filter(d => d.date.startsWith(ym));
             document.getElementById('monthlyCount').innerText = `${monthly.length} 杯`;
-        }
-
-        function showRankings() {
-            if (drinks.length === 0) return alert("還沒有紀錄喔！快去喝一杯吧～");
-
-            // 店家排行
-            const shopCounts = drinks.reduce((acc, d) => {
-                acc[d.shop] = (acc[d.shop] || 0) + 1;
-                return acc;
-            }, {});
-            const sortedShops = Object.entries(shopCounts).sort((a, b) => b[1] - a[1]);
-            
-            document.getElementById('shopRankList').innerHTML = sortedShops.slice(0, 3).map(([name, count], idx) => `
-                <div class="rank-item">
-                    <div class="rank-number bg-yellow-100 text-yellow-600">${idx+1}</div>
-                    <div class="flex-grow font-bold">${name}</div>
-                    <div class="text-xs text-gray-400">${count} 次紀錄</div>
-                </div>
-            `).join('');
-
-            // 飲料排行 (加權：次數 * 10 + 評分 * 2)
-            const drinkScores = drinks.reduce((acc, d) => {
-                const key = `${d.shop} - ${d.name}`;
-                if (!acc[key]) acc[key] = { count: 0, totalRating: 0 };
-                acc[key].count += 1;
-                acc[key].totalRating += (d.rating || 0);
-                return acc;
-            }, {});
-
-            const sortedDrinks = Object.entries(drinkScores)
-                .map(([name, data]) => ({
-                    name,
-                    score: (data.count * 10) + (data.totalRating / data.count * 2),
-                    count: data.count
-                }))
-                .sort((a, b) => b.score - a.score);
-
-            document.getElementById('drinkRankList').innerHTML = sortedDrinks.slice(0, 5).map((item, idx) => `
-                <div class="rank-item">
-                    <div class="rank-number ${idx < 3 ? 'bg-pink-100 text-pink-500' : 'bg-gray-100 text-gray-400'}">${idx+1}</div>
-                    <div class="flex-grow text-sm font-bold">${item.name}</div>
-                    <div class="text-[10px] text-pink-300">熱愛程度 ${Math.round(item.score)}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('rankModal').style.display = 'flex';
         }
 
         function renderCalendar() {
@@ -369,15 +436,15 @@
             const list = document.getElementById('drinkList');
             document.getElementById('listTitle').innerText = `${selectedDayStr} 紀錄`;
             if (filtered.length === 0) {
-                list.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs">休息日，沒喝飲料 🍃</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-widest text-uppercase">NO DRINKS TODAY 🍃</div>`;
                 return;
             }
             list.innerHTML = filtered.map(d => `
-                <div class="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm relative">
+                <div class="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm relative group">
                     <div class="text-xs font-bold text-pink-400 mb-1">${d.shop}</div>
-                    <div class="text-sm font-bold text-gray-700">${d.name}</div>
-                    <div class="text-[10px] text-gray-400 mt-1">${d.sugar} | ${d.ice} | ★ ${d.rating}</div>
-                    <button onclick="deleteDrink(${d.id})" class="absolute top-2 right-2 text-gray-200 hover:text-red-300"><i class="fas fa-times"></i></button>
+                    <div class="text-sm font-bold text-gray-700">${d.name} <span class="text-[10px] text-orange-300 ml-2">$${d.price}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-1">${d.sugar} | ${d.ice} | ★ ${d.rating.toFixed(1)}</div>
+                    <button onclick="deleteDrink(${d.id})" class="absolute top-2 right-2 text-gray-200 hover:text-red-300 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-times"></i></button>
                 </div>
             `).join('');
         }
@@ -387,9 +454,7 @@
             localStorage.setItem('my_drinks_v3', JSON.stringify(drinks));
             renderAll();
         }
-
         function changeMonth(n) { viewDate.setMonth(viewDate.getMonth() + n); renderCalendar(); }
-        function closeRankModal() { document.getElementById('rankModal').style.display = 'none'; }
     </script>
 </body>
 </html>
