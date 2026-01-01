@@ -127,6 +127,14 @@
             background-color: #ff8fa3 !important;
             color: white !important;
         }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ffe4e8;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -143,14 +151,20 @@
             <section class="pastel-card p-6 md:p-8">
                 <h2 class="text-lg font-bold mb-4 text-[#ff8fa3]">記一筆新紀錄</h2>
                 <form id="drinkForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 店名選單 -->
                     <div>
                         <label class="block text-xs font-bold text-gray-400 mb-2">店名</label>
-                        <select id="shopName" class="w-full border-pink-100 border-2 rounded-2xl p-3 bg-white outline-none" required>
+                        <select id="shopName" onchange="toggleOtherShopInput()" class="w-full border-pink-100 border-2 rounded-2xl p-3 bg-white outline-none" required>
                             <option value="">選擇店名</option>
                             <option>50嵐</option><option>可不可</option><option>迷客夏</option>
                             <option>麻古</option><option>清心</option><option>龜記</option>
-                            <option>得正</option><option>五桐號</option><option>再睡5分鐘</option><option>其他</option>
+                            <option>得正</option><option>五桐號</option><option>再睡5分鐘</option>
+                            <option value="other">其他（手動輸入）</option>
                         </select>
+                        <!-- 隱藏的手動輸入框 -->
+                        <div id="otherShopContainer" class="hidden mt-3">
+                            <input type="text" id="otherShopName" class="w-full border-purple-100 border-2 rounded-2xl p-3 outline-none focus:border-purple-300 transition" placeholder="請輸入店名...">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-400 mb-2">飲品</label>
@@ -241,7 +255,7 @@
             </div>
             
             <div class="overflow-y-auto space-y-8 pr-2 custom-scrollbar">
-                <!-- 新增：總花費卡片 -->
+                <!-- 總花費卡片 -->
                 <div class="summary-card">
                     <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">年度累積小確幸投資</p>
                     <p class="text-4xl font-black text-orange-400" id="totalSpentDisplay">NT$ 0</p>
@@ -282,6 +296,21 @@
             renderAll();
         };
 
+        // --- 店名輸入切換 ---
+        function toggleOtherShopInput() {
+            const select = document.getElementById('shopName');
+            const container = document.getElementById('otherShopContainer');
+            const input = document.getElementById('otherShopName');
+            
+            if (select.value === 'other') {
+                container.classList.remove('hidden');
+                input.focus();
+            } else {
+                container.classList.add('hidden');
+                input.value = '';
+            }
+        }
+
         function initStars() {
             const container = document.getElementById('starRatingContainer');
             container.innerHTML = '';
@@ -316,19 +345,16 @@
             }
         }
 
-        // --- 排行榜邏輯更新 ---
         function showRankings() {
             if (drinks.length === 0) {
                 alert("還沒有數據可以統計喔！");
                 return;
             }
 
-            // 1. 總花費統計
             const totalSpent = drinks.reduce((sum, d) => sum + (Number(d.price) || 0), 0);
             document.getElementById('totalSpentDisplay').innerText = `NT$ ${totalSpent.toLocaleString()}`;
             document.getElementById('avgSpentPerDrink').innerText = `平均每杯 $${Math.round(totalSpent / drinks.length)}`;
 
-            // 2. 統計店家次數
             const shopCounts = drinks.reduce((acc, d) => {
                 acc[d.shop] = (acc[d.shop] || 0) + 1;
                 return acc;
@@ -343,7 +369,6 @@
                 </div>
             `).join('');
 
-            // 3. 統計飲料評分與次數
             const drinkData = drinks.reduce((acc, d) => {
                 const key = `${d.shop} - ${d.name}`;
                 if (!acc[key]) acc[key] = { count: 0, totalScore: 0 };
@@ -382,10 +407,21 @@
 
         document.getElementById('drinkForm').onsubmit = (e) => {
             e.preventDefault();
+            
+            // 處理店名邏輯
+            let selectedShop = document.getElementById('shopName').value;
+            if (selectedShop === 'other') {
+                selectedShop = document.getElementById('otherShopName').value.trim();
+                if (!selectedShop) {
+                    alert('請輸入自訂店名！');
+                    return;
+                }
+            }
+
             drinks.push({
                 id: Date.now(),
                 date: selectedDayStr,
-                shop: document.getElementById('shopName').value,
+                shop: selectedShop,
                 name: document.getElementById('drinkName').value,
                 sugar: document.getElementById('sugar').value,
                 ice: document.getElementById('ice').value,
@@ -393,10 +429,12 @@
                 rating: currentRating,
                 note: document.getElementById('drinkNote').value
             });
+            
             localStorage.setItem('my_drinks_v3', JSON.stringify(drinks));
             currentRating = 0;
             updateStarsUI(0);
             e.target.reset();
+            document.getElementById('otherShopContainer').classList.add('hidden');
             renderAll();
         };
 
